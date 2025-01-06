@@ -72,6 +72,7 @@ var (
 	ccdTemplatePath          = kingpin.Flag("templates.ccd-path", "path to custom ccd.tpl").Default("").Envar("OVPN_TEMPLATES_CCD_PATH").String()
 	authByPassword           = kingpin.Flag("auth.password", "enable additional password authentication").Default("false").Envar("OVPN_AUTH").Bool()
 	authDatabase             = kingpin.Flag("auth.db", "database path for password authentication").Default("./easyrsa/pki/users.db").Envar("OVPN_AUTH_DB_PATH").String()
+	authDataBaseInit         = kingpin.Flag("auth.db-init", "enable database initialization if db user not exists or size is 0").Default("false").Envar("OVPN_AUTH_DB_INIT").Bool()
 	logLevel                 = kingpin.Flag("log.level", "set log level: trace, debug, info, warn, error (default info)").Default("info").Envar("LOG_LEVEL").String()
 	logFormat                = kingpin.Flag("log.format", "set log format: text, json (default text)").Default("text").Envar("LOG_FORMAT").String()
 	storageBackend           = kingpin.Flag("storage.backend", "storage backend: filesystem, kubernetes.secrets (default filesystem)").Default("filesystem").Envar("STORAGE_BACKEND").String()
@@ -503,6 +504,10 @@ func main() {
 
 	if *indexTxtPath == "" {
 		*indexTxtPath = *easyrsaDirPath + "/pki/index.txt"
+	}
+
+	if *authDataBaseInit {
+		ovpnUserInitDb()
 	}
 
 	ovpnAdmin := new(OvpnAdmin)
@@ -1499,6 +1504,13 @@ func unArchiveCcd() {
 	err := extractFromArchive(ccdArchivePath, *ccdDir)
 	if err != nil {
 		log.Warnf("unArchiveCcd: extractFromArchive() %s", err)
+	}
+}
+
+func ovpnUserInitDb() {
+	if fi, err := os.Stat(*authDatabase); errors.Is(err, os.ErrNotExist) || fi.Size() == 0 {
+		i := runBash(fmt.Sprintf("openvpn-user --db.path %[1]s db-init && openvpn-user --db.path %[1]s db-migrate", *authDatabase))
+		log.Debug(i)
 	}
 }
 
