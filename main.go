@@ -1346,7 +1346,7 @@ func (oAdmin *OvpnAdmin) mgmtGetActiveClients() []clientStatus {
 			break
 		}
 		oAdmin.mgmtRead(conn) // read welcome message
-		conn.Write([]byte("status\n"))
+		conn.Write([]byte("status 1\n"))
 		activeClients = append(activeClients, oAdmin.mgmtConnectedUsersParser(oAdmin.mgmtRead(conn), srv)...)
 		conn.Close()
 	}
