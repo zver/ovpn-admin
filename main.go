@@ -1236,6 +1236,14 @@ func (oAdmin *OvpnAdmin) userDelete(username string) (error, string) {
 				log.Error(err)
 			}
 			_ = runBash(fmt.Sprintf("cd %s && %s gen-crl 1>/dev/null ", *easyrsaDirPath, *easyrsaBinPath))
+
+			if fExist(*ccdDir + "/" + username) {
+				err = fDelete(*ccdDir + "/" + username)
+				if err != nil {
+					log.Error(err)
+				}
+			}
+
 		}
 		crlFix()
 		oAdmin.clients = oAdmin.usersList()
