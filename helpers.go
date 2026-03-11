@@ -299,15 +299,23 @@ func extractFromArchive(archive, path string) error {
 					}
 				}
 			}
-			outFile, err := os.Create(path + "/" + header.Name)
+
+			finalPath := path + "/" + header.Name
+			tmpPath := finalPath + ".tmp"
+			outFile, err := os.Create(tmpPath)
 			if err != nil {
-				log.Fatalf("extractFromArchive: Create() failed: %s", err.Error())
+				log.Fatalf("extractFromArchive: Create tmp failed: %s", err.Error())
 			}
 			if _, err := io.Copy(outFile, tarReader); err != nil {
+				outFile.Close()
 				log.Fatalf("extractFromArchive: Copy() failed: %s", err.Error())
 			}
-			outFile.Close()
-
+			if err := outFile.Close(); err != nil {
+				log.Fatalf("extractFromArchive: Close() failed: %s", err.Error())
+			}
+			if err := os.Rename(tmpPath, finalPath); err != nil {
+				log.Fatalf("extractFromArchive: Rename() failed: %s", err.Error())
+			}
 		default:
 			log.Fatalf(
 				"extractFromArchive: uknown type: %s in %s", header.Typeflag, header.Name)
